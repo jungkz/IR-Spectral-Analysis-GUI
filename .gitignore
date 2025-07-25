@@ -1,0 +1,31 @@
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environment folders
+.conda/
+env/
+venv/
+
+# VSCode settings
+.vscode/
+
+# Git internal folder
+.git/
+
+# Data
+data/references/
+data/samples/
+outputs/
+
+# Spectra processing artifacts
+data/processed_spa/
+data/processed_rruff_txt/
+
+# Logs or temp files (if any)
+*.log
+*.tmp
