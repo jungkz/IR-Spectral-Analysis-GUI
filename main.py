@@ -14,6 +14,9 @@ class IRViewer(QWidget):
         self.setWindowTitle("Infrared Spectral Analysis Tool")
         self.resize(400, 500)
         self.current_fig = None
+        # Define sample and reference folder paths
+        self.sample_folder = os.path.join("data", "samples")
+        self.reference_folder = os.path.join("data", "references")
         self.init_ui()
 
     def init_ui(self):
@@ -158,8 +161,12 @@ class IRViewer(QWidget):
                 QMessageBox.critical(self, "Error", f"Cleaning failed:\n{str(e)}")
 
     def plot_spectra(self, file_paths=None, stacked=False):
-        sample_paths = self.create_searchable_file_dialog("Select Sample Spectra", "data/samples")
-        reference_paths = self.create_searchable_file_dialog("Select Reference Spectra", "data/references") 
+        # Check for sample files before plotting
+        if not os.listdir(self.sample_folder):
+            QMessageBox.warning(self, "No Samples", "No sample files found. Please upload files first.")
+            return
+        sample_paths = self.create_searchable_file_dialog("Select Sample Spectra", self.sample_folder)
+        reference_paths = self.create_searchable_file_dialog("Select Reference Spectra", self.reference_folder)
 
         if sample_paths or reference_paths:
             # Ask for plot display mode before plotting
@@ -352,9 +359,13 @@ class IRViewer(QWidget):
         return selected
 
     def run_pca_analysis(self):
+        # Check for sample files before analysis
+        if not os.listdir(self.sample_folder):
+            QMessageBox.warning(self, "No Samples", "No sample files found. Please upload files first.")
+            return
         try:
-            sample_paths = self.create_searchable_file_dialog("Select Sample Spectra", "data/samples")
-            reference_paths = self.create_searchable_file_dialog("Select Reference Spectra", "data/references")
+            sample_paths = self.create_searchable_file_dialog("Select Sample Spectra", self.sample_folder)
+            reference_paths = self.create_searchable_file_dialog("Select Reference Spectra", self.reference_folder)
 
             if not sample_paths and not reference_paths:
                 QMessageBox.information(self, "No Selection", "No files were selected.")
@@ -372,14 +383,23 @@ class IRViewer(QWidget):
         from tools.analysis.correlations import run_correlation_analysis
         import os
 
+        # Check for sample files before analysis
+        if not os.listdir(self.sample_folder):
+            QMessageBox.warning(self, "No Samples", "No sample files found. Please upload files first.")
+            return
+
         # Allow only 1 or 2 selections, no select all
-        sample_paths = self.create_searchable_file_dialog("Select ONE or TWO Sample Files", "data/samples")
+        sample_paths = self.create_searchable_file_dialog("Select ONE or TWO Sample Files", self.sample_folder)
         if not sample_paths or len(sample_paths) not in [1, 2]:
             QMessageBox.warning(self, "Invalid Selection", "Please select ONE or TWO sample files.")
             return
 
         if len(sample_paths) == 1:
-            reference_paths = self.create_searchable_file_dialog("Select ONE Reference File", "data/references")
+            # Check for reference files before analysis
+            if not os.listdir(self.reference_folder):
+                QMessageBox.warning(self, "No Reference Files", "No reference files found. Please upload reference files first.")
+                return
+            reference_paths = self.create_searchable_file_dialog("Select ONE Reference File", self.reference_folder)
             if len(reference_paths) != 1:
                 QMessageBox.warning(self, "Invalid Selection", "Please select exactly ONE reference file.")
                 return
@@ -418,6 +438,11 @@ class IRViewer(QWidget):
         import pandas as pd
         import datetime
 
+        # Check for sample files before batch analysis
+        if not os.listdir(self.sample_folder):
+            QMessageBox.warning(self, "No Samples", "No sample files found. Please upload files first.")
+            return
+
         dialog = QDialog(self)
         dialog.setWindowTitle("Select Batch Mode")
         layout = QVBoxLayout()
@@ -441,7 +466,12 @@ class IRViewer(QWidget):
         try:
             results = []
             if mode == "Sample vs Sample":
-                sample_files = self.create_searchable_file_dialog("Select Sample Spectra", "data/samples")
+                sample_files = self.create_searchable_file_dialog("Select Sample Spectra", self.sample_folder)
+                # Check for at least two sample files in the folder
+                sample_files_in_folder = os.listdir(self.sample_folder)
+                if len(sample_files_in_folder) < 2:
+                    QMessageBox.warning(self, "Not Enough Samples", "At least two sample files are required for this analysis.")
+                    return
                 if len(sample_files) < 2:
                     QMessageBox.warning(self, "Insufficient Selection", "Select at least two sample files for batch analysis.")
                     return
@@ -456,10 +486,15 @@ class IRViewer(QWidget):
                             r, rho
                         ])
             else:
-                sample_files = self.create_searchable_file_dialog("Select Sample Spectra", "data/samples")
-                ref_files = self.create_searchable_file_dialog("Select Reference Spectra", "data/references")
+                # Sample vs Reference
+                # Check for reference files in folder
+                if not os.listdir(self.reference_folder):
+                    QMessageBox.warning(self, "No Reference Files", "No reference files found. Please upload reference files first.")
+                    return
+                sample_files = self.create_searchable_file_dialog("Select Sample Spectra", self.sample_folder)
+                ref_files = self.create_searchable_file_dialog("Select Reference Spectra", self.reference_folder)
                 if len(sample_files) == 0 or len(ref_files) == 0:
-                    QMessageBox.warning(self, "Insufficient Selection", "Select at least one sample and one reference fil   e for batch analysis.")
+                    QMessageBox.warning(self, "Insufficient Selection", "Select at least one sample and one reference file for batch analysis.")
                     return
                 # Set interpolate True if reference files are present, otherwise False
                 interpolate = bool(ref_files)
@@ -480,7 +515,7 @@ class IRViewer(QWidget):
             os.makedirs("outputs", exist_ok=True)
             output_path = os.path.join("outputs", f"batch_correlation_results_{timestamp}.csv")
             df.to_csv(output_path, index=False)
-            QMessageBox.information(self, "Batch Analysis Complete", f"Batch correlation analysis completed.\nResults saved to: (output path)")
+            QMessageBox.information(self, "Batch Analysis Complete", f"Batch correlation analysis completed.\nResults saved to: {output_path}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Batch correlation analysis failed:\n{str(e)}")
 
