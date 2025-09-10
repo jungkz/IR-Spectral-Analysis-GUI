@@ -112,7 +112,7 @@ class IRViewer(QWidget):
         info_text = QTextEdit()
         info_text.setReadOnly(True)
         info_text.setHtml("""
-        <i>This program was developed by Andie Park as part of the New Jersey Governor's School in the Sciences 2025 Archaeology Research Project. Credit to Darby Ko for interpolation logic in correlations and unused prototype script.</i>
+        <i>This program was developed by Andie Park and Darby Ko as part of the New Jersey Governor's School in the Sciences 2025 Archaeology Research Project.</i>
         <h2>How to Use This Program</h2>
         <p>This program allows you to visualize and analyze FT-IR spectra data.</p>
         <h3>Step 1: Input Files</h3>
